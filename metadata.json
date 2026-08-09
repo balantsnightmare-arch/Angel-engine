@@ -1,0 +1,6 @@
+{
+  "name": "Triad AI Council",
+  "description": "A retro-futuristic AI council where 3 customizable AI nodes (Logical, Moral, Philosophical) debate in real time until unanimous consensus is reached.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

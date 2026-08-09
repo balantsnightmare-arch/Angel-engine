@@ -1,0 +1,90 @@
+@import url('https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+:root {
+  /* NGE / NERV Accurate Color System */
+  /* Eva Unit-01 purple family — dark, desaturated eggplant/violet */
+  /* NERV warning orange  — earthy burnt rust, not neon */
+
+  --nerv-bg:        #130800;   /* very dark burnt umber background */
+  --nerv-bg2:       #1A0C04;   /* slightly lighter, panel bg */
+  --nerv-bg3:       #200E06;   /* border/header bg */
+  --nerv-border:    #3A1A06;
+
+  /* NERV orange: the specific burnt rust from the show */
+  --nerv-orange:    #8B3510;   /* primary accent orange */
+  --nerv-orange-dim:#5A2008;
+  --nerv-amber:     #B85A20;   /* brighter orange text */
+  --nerv-amber-dim: #6A3010;
+
+  --nerv-red:       #6A1A10;
+  --nerv-red-bright:#A02A1A;
+
+  /* Eva Unit-01 purple family */
+  --nerv-green:     #1A2A14;
+  --nerv-green-dim: #0E180A;
+  --nerv-teal:      #0A2020;
+
+  --nerv-text:      #C0986A;   /* warm amber-tan text */
+  --nerv-text-dim:  #6A4A28;
+  --nerv-text-muted:#3A2A14;
+
+  --nerv-glow-o:    rgba(139, 53, 16, 0.2);
+  --nerv-glow-r:    rgba(106, 26, 16, 0.25);
+  --nerv-scanline:  rgba(139, 53, 16, 0.03);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--nerv-bg);
+  color: var(--nerv-text);
+  font-family: 'Share Tech Mono', 'Courier New', monospace;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: #0a0a0b; }
+::-webkit-scrollbar-thumb { background: var(--nerv-orange-dim); }
+::-webkit-scrollbar-thumb:hover { background: var(--nerv-orange); }
+
+/* Hazard stripe utility */
+.hazard-stripe {
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--nerv-orange) 0,
+    var(--nerv-orange) 5px,
+    #000 5px,
+    #000 11px
+  );
+  opacity: 0.45;
+}
+
+/* Glitch flicker on active elements */
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  92%       { opacity: 1; }
+  93%       { opacity: 0.6; }
+  94%       { opacity: 1; }
+  96%       { opacity: 0.7; }
+  97%       { opacity: 1; }
+}
+
+@keyframes eva-pulse {
+  0%, 100% { box-shadow: 0 0 8px var(--nerv-glow-o); }
+  50%       { box-shadow: 0 0 20px var(--nerv-glow-o), 0 0 40px rgba(184,98,26,0.1); }
+}
+
+.eva-flicker { animation: flicker 8s infinite; }
+.eva-pulse   { animation: eva-pulse 2.5s ease-in-out infinite; }
