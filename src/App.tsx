@@ -6,6 +6,15 @@ import { VerdictDisplay } from "./components/VerdictDisplay";
 import { NodeConfigModal } from "./components/NodeConfigModal";
 import { PresetTopicsModal } from "./components/PresetTopicsModal";
 import { GoogleAuthModal, GoogleUser } from "./components/GoogleAuthModal";
+import { HistoryModal } from "./components/HistoryModal";
+import {
+  HistoryEntry,
+  HistoryStatus,
+  loadHistory,
+  saveHistoryEntry,
+  deleteHistoryEntry,
+  clearHistory,
+} from "./lib/history";
 import { DEFAULT_NODES, NORMAL_MODE_MODELS, ADVANCED_MODE_MODELS } from "./lib/constants";
 import { CouncilNodeConfig, SpeechTurn, FinalVerdict, CouncilMode, ModelOptionId } from "./types";
 import { playAlarm, playBeep, playChime, playCodeType, stopSpeaking } from "./lib/sound";
@@ -72,6 +81,62 @@ export default function App() {
 
   const [disabledNodeIds, setDisabledNodeIds] = useState<Set<string>>(new Set());
   const isDeliberatingRef = useRef(false);
+
+  // ── Deliberation history ──
+  const [history, setHistory] = useState<HistoryEntry[]>(() => loadHistory());
+  const [showHistory, setShowHistory] = useState(false);
+  const sessionRef = useRef<{
+    id: string;
+    topic: string;
+    context: string;
+    mode: CouncilMode;
+    nodes: CouncilNodeConfig[];
+    createdAt: string;
+    turns: SpeechTurn[];
+    rounds: number;
+  } | null>(null);
+
+  const archiveSession = (
+    finalStatus: HistoryStatus,
+    finalVerdict: FinalVerdict | null,
+    error?: string
+  ) => {
+    const s = sessionRef.current;
+    if (!s) return;
+    sessionRef.current = null;
+    if (s.turns.length === 0 && !finalVerdict) return; // nothing worth saving
+    const entry: HistoryEntry = {
+      id: s.id,
+      topic: s.topic,
+      context: s.context || undefined,
+      mode: s.mode,
+      status: finalStatus,
+      rounds: s.rounds,
+      nodes: s.nodes,
+      turns: s.turns,
+      verdict: finalVerdict,
+      errorMessage: error,
+      createdAt: s.createdAt,
+    };
+    setHistory(saveHistoryEntry(entry));
+  };
+
+  const handleOpenHistoryEntry = (entry: HistoryEntry) => {
+    stopSpeaking();
+    setTopic(entry.topic);
+    setContext(entry.context || "");
+    setMode(entry.mode);
+    if (entry.nodes?.length) setNodes(entry.nodes);
+    setTurns(entry.turns);
+    setVerdict(entry.verdict);
+    setStatus(entry.status);
+    setCurrentRound(entry.rounds || 1);
+    setActiveNodeId(null);
+    setThinkingNodeName(null);
+    setErrorMessage(entry.errorMessage ?? null);
+    setActiveTab(entry.verdict ? "VERDICT" : "TERMINAL");
+    setShowHistory(false);
+  };
 
   const handleToggleNode = (nodeId: string) => {
     setDisabledNodeIds((prev) => {
@@ -184,6 +249,10 @@ export default function App() {
           } else if (eventType === "node_turn") {
             const newTurn: SpeechTurn = data.speechTurn;
             currentRoundTurns.push(newTurn);
+            if (sessionRef.current) {
+              sessionRef.current.turns = [...sessionRef.current.turns, newTurn];
+              sessionRef.current.rounds = Math.max(sessionRef.current.rounds, newTurn.round || targetRound);
+            }
             setTurns((prev) => [...prev, newTurn]);
             playCodeType();
             setActiveNodeId(null);
@@ -204,9 +273,9 @@ export default function App() {
       const totalTurns = [...accumulatedTurns, ...currentRoundTurns];
 
       if (finalVerdictReceived) {
-        setStatus(
-          finalVerdictReceived.unanimous ? "CONSENSUS_REACHED" : "SPLIT_DECISION"
-        );
+        const finalStatus = finalVerdictReceived.unanimous ? "CONSENSUS_REACHED" : "SPLIT_DECISION";
+        setStatus(finalStatus);
+        archiveSession(finalStatus, finalVerdictReceived);
         setActiveNodeId(null);
         setThinkingNodeName(null);
       } else if (overtimeTriggered) {
@@ -219,6 +288,7 @@ export default function App() {
         await runDeliberationRound(targetRound + 1, totalTurns);
       } else {
         setStatus("SPLIT_DECISION");
+        archiveSession("SPLIT_DECISION", null);
         setActiveNodeId(null);
         setThinkingNodeName(null);
       }
@@ -226,6 +296,7 @@ export default function App() {
       console.error("Deliberation failed:", err);
       setStatus("ERROR");
       setErrorMessage(err.message || "Connection to Council Supercomputer lost.");
+      archiveSession("ERROR", null, err.message || "Connection to Council Supercomputer lost.");
       setActiveNodeId(null);
       setThinkingNodeName(null);
     }
@@ -239,6 +310,16 @@ export default function App() {
     setErrorMessage(null);
     setActiveTab("TERMINAL");
     isDeliberatingRef.current = true;
+    sessionRef.current = {
+      id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+      topic,
+      context,
+      mode,
+      nodes: nodes.filter((n) => !disabledNodeIds.has(n.id)),
+      createdAt: new Date().toISOString(),
+      turns: [],
+      rounds: 1,
+    };
     await runDeliberationRound(1, []);
   };
 
@@ -273,6 +354,8 @@ export default function App() {
           setShowNodeConfig(true);
         }}
         onOpenPresets={() => setShowPresets(true)}
+        onOpenHistory={() => setShowHistory(true)}
+        historyCount={history.length}
         onOpenGoogleAuth={() => setShowGoogleAuthModal(true)}
         googleUser={googleUser}
         onReset={handleReset}
@@ -573,6 +656,16 @@ export default function App() {
             );
           }}
           onResetNodes={() => setNodes(DEFAULT_NODES)}
+        />
+      )}
+
+      {showHistory && (
+        <HistoryModal
+          entries={history}
+          onOpenEntry={handleOpenHistoryEntry}
+          onDeleteEntry={(id) => setHistory(deleteHistoryEntry(id))}
+          onClearAll={() => setHistory(clearHistory())}
+          onClose={() => setShowHistory(false)}
         />
       )}
 

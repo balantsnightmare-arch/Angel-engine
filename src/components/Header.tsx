@@ -1,5 +1,5 @@
 import React from "react";
-import { Cpu, Volume2, VolumeX, Settings, Sparkles, RefreshCw, UserCheck, LogIn } from "lucide-react";
+import { Cpu, Volume2, VolumeX, Settings, Sparkles, RefreshCw, UserCheck, LogIn, History } from "lucide-react";
 import { setSoundEnabled, playBeep } from "../lib/sound";
 import { GoogleUser } from "./GoogleAuthModal";
 
@@ -8,6 +8,8 @@ interface HeaderProps {
   onToggleSound: (enabled: boolean) => void;
   onOpenConfig: () => void;
   onOpenPresets: () => void;
+  onOpenHistory: () => void;
+  historyCount: number;
   onOpenGoogleAuth: () => void;
   googleUser: GoogleUser | null;
   onReset: () => void;
@@ -21,6 +23,8 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleSound,
   onOpenConfig,
   onOpenPresets,
+  onOpenHistory,
+  historyCount,
   onOpenGoogleAuth,
   googleUser,
   onReset,
@@ -203,6 +207,26 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <Sparkles className="w-3.5 h-3.5" style={{ color: "var(--nerv-orange)" }} />
             <span className="hidden md:inline">PRESETS</span>
+          </button>
+
+          {/* History */}
+          <button
+            onClick={() => {
+              playBeep(920, 0.05);
+              onOpenHistory();
+            }}
+            className="px-2.5 py-1 text-xs font-bold transition cursor-pointer flex items-center space-x-1"
+            style={{
+              background: "#050506",
+              border: "1px solid var(--nerv-orange-dim)",
+              color: "var(--nerv-text)",
+            }}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = "var(--nerv-orange)")}
+            onMouseLeave={e => (e.currentTarget.style.borderColor = "var(--nerv-orange-dim)")}
+            title="Past Deliberations"
+          >
+            <History className="w-3.5 h-3.5" style={{ color: "var(--nerv-orange)" }} />
+            <span className="hidden md:inline">HISTORY{historyCount > 0 ? ` (${historyCount})` : ""}</span>
           </button>
 
           {/* Node Config */}

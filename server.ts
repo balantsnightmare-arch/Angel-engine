@@ -365,7 +365,7 @@ You MUST respond with valid JSON containing these fields:
       } catch (e) {
         parsed = {
           reasoning: "Calculations synchronized across Angel Engine matrix.",
-          statement: response.text || "Statement recorded.",
+          statement: responseText || "Statement recorded.",
           vote: "AGREE",
           proposedResolution: topic,
         };
